@@ -1,50 +1,93 @@
-from flask import Flask, url_for, render_template, request, jsonify
-from flask_pymongo import PyMongo
-from flask_login import LoginManager
+from flask import Flask
+from flask import url_for, render_template, request
+from flask import redirect, jsonify
+from flask_mongoengine import MongoEngine
+from flask_mongoengine.wtf import model_form
 
 app = Flask(__name__)
-mongo = PyMongo(app)
-login_manager = LoginManager()
-login_manager.init_app(app)
+db = MongoEngine(app)
+app.config['MONGODB_SETTINGS'] = {
+	'db': 'flaskapp'
+}
 
-# 127.0.0.1:5000/users
-@app.route("/users/")
-def users():
-	users = []
-	for i in mongo.db.user.find():
-		temp = i
-		del temp['_id']
-		users.append(temp)
-	return jsonify({'users' : users})
+#User Model
+class User(db.Document):
+	username = db.StringField(max_length=50, required=True, unique=True)
+	email = db.StringField(max_length=100, required=True)
+	password = db.StringField(max_length=50, required=True)
 
-# 127.0.0.1:5000/add_user?usernam=raghu&password=ram
-@app.route("/add_user/")
+@app.route('/')
 def index():
-	# print(type(request.args))
-	# print(request.args.get('raghu'))
-	username = request.args.get('username')
-	email = request.args.get('email')
-	password = request.args.get('password')
-	try :
-		assert username is not None or password is not None
-	except:
-		return "Hello World!\nSend GET request with username, email and password to signup."
-	mongo.db.user.insert({
-		"username" : username,
-		"email" : email,
-		"password" : password
-	})
-	# return "Hello World!\nSend GET request with username, email and password to signup."
-	return "Signed UP"
+	return "To be implemented"
 
-# 127.0.0.1:5000/del_user/raghu
-@app.route("/del_user/<username>/")
+@app.route('/signup/', methods=['GET', 'POST'])
+def signup():
+	if request.method=='GET': #Send the signup form
+		return render_template('signup.html')
+
+	elif request.method=='POST': #Signup the user
+		#Get the post data
+		username = request.form.get('username')
+		email    = request.form.get('email')
+		password = request.form.get('password')
+		confirm_password = request.form.get('confirm_password')
+
+		#Checks
+		errors = []
+		if username is None or username=='':
+			errors.append('Username is required')
+		if email is None or email=='':
+			errors.append('Email is required')
+		if password is None or password=='':
+			errors.append('Password is required')
+		if confirm_password is None or confirm_password=='':
+			errors.append('Confirm Password is required')
+		if password!=confirm_password:
+			errors.append('Passwords do not match')
+
+		#Create New User and Save to Database
+		newuser = User(username=username, email=email, password=password)
+		newuser.save()
+
+		#Return Success Message
+		return "Signup Successful"
+		
+		#Error Message
+		if len(errors)>0:
+			return render_template('error.html', errors=errors)
+		
+@app.route('/login/')
+def login():
+	return "To be implemented"
+
+
+
+
+
+
+
+
+
+
+
+
+################################
+###HIDDEN VIEWS FOR DEBUGGING###
+################################
+@app.route('/users/')
+def users():
+	return jsonify(User.objects)
+
+@app.route('/del_user/<username>/')
 def del_user(username):
-	mongo.db.user.delete_one({"username" : username})
-	return "Deleted	"
+	try:
+		User.objects.get_or_404(username=username).delete()
+		return "Deleted"
+	except Exception as e:
+		return str(e)
 
-# 127.0.0.1:5000/del_all_users
-@app.route("/del_all_users/")
+@app.route('/del_all_users/')
 def del_all_users():
-	mongo.db.user.delete_many({})
-	return "Deleted	All Users"
+	for i in User.objects:
+		i.delete()
+	return "Deleted All Users"

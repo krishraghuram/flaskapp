@@ -15,7 +15,7 @@
 	* All have flask extensions
 	* MongoAlchemy is no longer maintained
 	* Among the other three, do not know which one is better
-	* So, based on our choice of Authentication Framework, we are going with MongoEngine.
+	* So, based on some minimal study, we are going with MongoEngine.
 
 2) The Authentication Framework
 	* There are two extensions  Flask-Login and Flask-User
@@ -28,8 +28,5 @@
 			* Added Security and Reliability
 			* User Registrations and Email Confirmations
 			* Change Usernames/Passwords and handle Forgotten Passwords
-		* However, unlike flask-login, it is not ORM and DB agnostic. 
-			* It comes with a adapter for SQLAlchemy as stated [here](http://flask-user.readthedocs.io/en/v0.6/limitations.html#supported-databases)
-			* But that is not a big problem. [This](https://github.com/lingthio/Flask-User/issues/37) and [this](https://flask-user.readthedocs.io/en/latest/mongodb_app.html) provide a solution for using MongoDB, using MongoEngine.
-
+		* However, unlike flask-login, it is not ORM and DB agnostic. The current stable version, v0.6 does not support MongoDB. Version 0.9 supports MongoDB, but it is in alpha now. Thus, we are going with Flask-Login
 
