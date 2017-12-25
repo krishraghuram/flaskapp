@@ -3,12 +3,16 @@ from flask import url_for, render_template, request
 from flask import redirect, jsonify
 from flask_mongoengine import MongoEngine
 from flask_mongoengine.wtf import model_form
+from flask_login import LoginManager, login_user, login_required, logout_user
 
 app = Flask(__name__)
 db = MongoEngine(app)
+app.secret_key = 'j+cTGqe32uAkc9oHxlu0fgx2SRAy9kVsJ1/MkBho3Po='
 app.config['MONGODB_SETTINGS'] = {
 	'db': 'flaskapp'
 }
+login_manager = LoginManager()
+login_manager.init_app(app)
 
 #User Model
 class User(db.Document):
@@ -16,9 +20,25 @@ class User(db.Document):
 	email = db.StringField(max_length=100, required=True)
 	password = db.StringField(max_length=50, required=True)
 
+	def __repr__(self):
+		return '<User %r>' % self.username
+	def is_authenticated(self):
+		return True
+	def is_active(self):
+		return True
+	def is_anonymous(self):
+		return False
+	def get_id(self):
+		return str(self.username)
+
+@login_manager.user_loader
+def load_user(user_id):
+	return User.objects.get(username=user_id)
+
 @app.route('/')
+@login_required
 def index():
-	return "To be implemented"
+	return 'Welcome to FlaskApp'
 
 @app.route('/signup/', methods=['GET', 'POST'])
 def signup():
@@ -56,15 +76,39 @@ def signup():
 		if len(errors)>0:
 			return render_template('error.html', errors=errors)
 		
-@app.route('/login/')
+@app.route('/login/', methods=['GET', 'POST'])
 def login():
-	return "To be implemented"
+	if request.method=='GET': #Send the login form
+		return render_template('login.html')
 
+	elif request.method=='POST': #Login the user
+		#Get the post data
+		username = request.form.get('username')
+		password = request.form.get('password')
 
+		#Checks
+		errors = []
+		if username is None or username=='':
+			errors.append('Username is required')
+		if password is None or password=='':
+			errors.append('Password is required')
+		#Query for user from database and check password
+		user = User.objects.get_or_404(username=username)
+		if user.password == password:
+			login_user(user)
+			return "Login Successful"
+		else:
+			errors.append("Password is incorrect")
 
+		#Error Message
+		if len(errors)>0:
+			return render_template('error.html', errors=errors)
 
-
-
+@app.route("/logout/")
+@login_required
+def logout():
+	logout_user()
+	return "Logged out"
 
 
 
