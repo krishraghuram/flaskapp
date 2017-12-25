@@ -29,4 +29,6 @@
 			* User Registrations and Email Confirmations
 			* Change Usernames/Passwords and handle Forgotten Passwords
 		* However, unlike flask-login, it is not ORM and DB agnostic. The current stable version, v0.6 does not support MongoDB. Version 0.9 supports MongoDB, but it is in alpha now. Thus, we are going with Flask-Login
+	* Flask-Security is similar to Flask-User and is compatible with Flask-MongoEngine. Should have used it instead of Flask-Login.
 
+3) Flask-Dance and Flask-OAuth
