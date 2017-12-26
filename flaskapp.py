@@ -3,7 +3,7 @@ from flask import url_for, render_template, request
 from flask import redirect, jsonify
 from flask_mongoengine import MongoEngine
 from flask_mongoengine.wtf import model_form
-from flask_login import LoginManager, login_user, login_required, logout_user
+from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 
 app = Flask(__name__)
 db = MongoEngine(app)
@@ -110,8 +110,42 @@ def logout():
 	logout_user()
 	return "Logged out"
 
+@app.route("/change_password/", methods=['GET', 'POST'])
+@login_required
+def change_password():
+	if request.method=='GET': #Send the change password form
+		return render_template('change_password.html')
 
+	elif request.method=='POST': 
+		#Get the post data
+		username = request.form.get('username')
+		current_password = request.form.get('current_password')
+		new_password = request.form.get('password')
+		confirm_new_password = request.form.get('confirm_password')
 
+		#Checks
+		errors = []
+		if username is None or username=='':
+			errors.append('Username is required')
+		if current_password is None or current_password=='':
+			errors.append('Current Password is required')
+		if new_password is None or new_password=='':
+			errors.append('New Password is required')
+		if confirm_new_password is None or confirm_new_password=='':
+			errors.append('Confirm New Password is required')
+		if new_password!=confirm_new_password:
+			errors.append('New Passwords do not match')
+		user = User.objects.get_or_404(username=username)
+		if user.password != current_password:
+			errors.append("Password is incorrect")
+		#Query for user from database and check password
+		if len(errors)==0:
+			user.password = new_password
+			user.save()
+			return "Password Changed"
+		#Error Message
+		elif len(errors)>0:
+			return render_template('error.html', errors=errors)
 
 
 
@@ -135,3 +169,7 @@ def del_all_users():
 	for i in User.objects:
 		i.delete()
 	return "Deleted All Users"
+
+@app.route('/me/')
+def me():
+	return "You are logged in as : %s" % current_user.username
