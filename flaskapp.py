@@ -68,7 +68,7 @@ def signup():
 			errors.append('Passwords do not match')
 
 		#Create New User and Save to Database
-		pw_hash = bcrypt.generate_password_hash(password).decode(‘utf-8’)
+		pw_hash = bcrypt.generate_password_hash(password).decode('utf-8')
 		newuser = User(username=username, email=email, password=pw_hash)
 		newuser.save()
 
@@ -143,7 +143,7 @@ def change_password():
 			errors.append("Password is incorrect")
 		#Query for user from database and check password
 		if len(errors)==0:
-			pw_hash = bcrypt.generate_password_hash(new_password).decode(‘utf-8’)
+			pw_hash = bcrypt.generate_password_hash(new_password).decode('utf-8')
 			user.password = pw_hash
 			user.save()
 			return "Password Changed"
