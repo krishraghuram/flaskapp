@@ -18,11 +18,11 @@ import os
 
 from apiclient import errors
 
-try:
-	import argparse
-	flags = argparse.ArgumentParser(parents=[tools.argparser]).parse_args()
-except ImportError:
-	flags = None
+# try:
+# 	import argparse
+# 	flags = argparse.ArgumentParser(parents=[tools.argparser]).parse_args()
+# except ImportError:
+# 	flags = None
 
 # If modifying these scopes, delete your previously saved credentials
 # at ~/.credentials/gmail-python-quickstart.json
@@ -45,7 +45,7 @@ def get_credentials():
 	if not os.path.exists(credential_dir):
 		os.makedirs(credential_dir)
 	credential_path = os.path.join(credential_dir,
-								   'gmail-python-quickstart.json')
+									 'gmail-python-quickstart.json')
 
 	store = Storage(credential_path)
 	credentials = store.get()
@@ -60,44 +60,62 @@ def get_credentials():
 	return credentials
 
 def SendMessage(service, user_id, message):
-  """Send an email message.
+	"""Send an email message.
 
-  Args:
-    service: Authorized Gmail API service instance.
-    user_id: User's email address. The special value "me"
-    can be used to indicate the authenticated user.
-    message: Message to be sent.
+	Args:
+		service: Authorized Gmail API service instance.
+		user_id: User's email address. The special value "me"
+		can be used to indicate the authenticated user.
+		message: Message to be sent.
 
-  Returns:
-    Sent Message.
-  """
-  try:
-    message = (service.users().messages().send(userId=user_id, body=message)
-               .execute())
-    print('Message Id: %s' % message['id'])
-    return message
-  except errors.HttpError as error:
-    print('An error occurred: %s' % error)
+	Returns:
+		Sent Message.
+	"""
+	try:
+		message = (service.users().messages().send(userId=user_id, body=message)
+							 .execute())
+		print('Message Id: %s' % message['id'])
+		return message
+	except errors.HttpError as error:
+		print('An error occurred: %s' % error)
 
 
 def CreateMessage(sender, to, subject, message_text):
-  """Create a message for an email.
+	"""Create a message for an email.
 
-  Args:
-    sender: Email address of the sender.
-    to: Email address of the receiver.
-    subject: The subject of the email message.
-    message_text: The text of the email message.
+	Args:
+		sender: Email address of the sender.
+		to: Email address of the receiver.
+		subject: The subject of the email message.
+		message_text: The text of the email message.
 
-  Returns:
-    An object containing a base64url encoded email object.
-  """
-  message = MIMEText(message_text)
-  message['to'] = to
-  message['from'] = sender
-  message['subject'] = subject
-  # return {'raw': base64.urlsafe_b64encode(message.as_string())}
-  return {'raw': base64.urlsafe_b64encode(message.as_string().encode()).decode()}
+	Returns:
+		An object containing a base64url encoded email object.
+	"""
+	message = MIMEText(message_text)
+	message['to'] = to
+	message['from'] = sender
+	message['subject'] = subject
+	# return {'raw': base64.urlsafe_b64encode(message.as_string())}
+	return {'raw': base64.urlsafe_b64encode(message.as_string().encode()).decode()}
+
+def SendPasswordResetMail(user, generated_password, sender='krish.raghuram@gmail.com'):
+	to = user.email
+	subject = "Link to Reset Password for FlaskApp"
+	message_text = """
+	Dear {0},
+	Your FlaskApp password has been reset to {1}
+	Visit the site and change it immediately. 
+	""".format(user.username, generated_password)
+
+	credentials = get_credentials()
+	http = credentials.authorize(httplib2.Http())
+	service = discovery.build('gmail', 'v1', http=http)
+
+	message = CreateMessage(sender, user.email, subject, message_text)
+	sent_message = SendMessage(service, 'me', message)
+
+	return sent_message
 
 ############################################################################################
 ##########################################TEST CODE#########################################

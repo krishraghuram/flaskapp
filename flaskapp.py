@@ -4,7 +4,7 @@ from flask import redirect, jsonify
 from flask_mongoengine import MongoEngine
 from flask_mongoengine.wtf import model_form
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
-from flask.ext.bcrypt import Bcrypt
+from flask_bcrypt import Bcrypt
 
 app = Flask(__name__)
 db = MongoEngine(app)
@@ -20,7 +20,7 @@ bcrypt = Bcrypt(app)
 class User(db.Document):
 	username = db.StringField(max_length=50, required=True, unique=True)
 	email = db.StringField(max_length=100, required=True)
-	password = db.StringField(max_length=50, required=True)
+	password = db.StringField(max_length=100, required=True)
 
 	def __repr__(self):
 		return '<User %r>' % self.username
@@ -139,7 +139,7 @@ def change_password():
 		if new_password!=confirm_new_password:
 			errors.append('New Passwords do not match')
 		user = User.objects.get_or_404(username=username)
-		if not bcrypt.check_password_hash(user.password, password) :
+		if not bcrypt.check_password_hash(user.password, current_password) :
 			errors.append("Password is incorrect")
 		#Query for user from database and check password
 		if len(errors)==0:
@@ -151,6 +151,42 @@ def change_password():
 		elif len(errors)>0:
 			return render_template('error.html', errors=errors)
 
+@app.route("/forgot_password/", methods=['GET', 'POST'])
+def forgot_password():
+	if request.method=='GET': #Send the forgot password form
+		return render_template('forgot_password.html')
+
+	elif request.method=='POST': 
+		#Get the post data
+		username = request.form.get('username')
+
+		#Checks
+		errors = []
+		if username is None or username=='':
+			errors.append('Username is required')
+		user = User.objects.get_or_404(username=username)
+		
+		#Generate Random Pass and Set it to User object
+		import random
+		s = "abcdefghijklmnopqrstuvwxyz01234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+		passlen = 16
+		generated_password =  "".join(random.sample(s,passlen ))
+		print(generated_password)
+		pw_hash = bcrypt.generate_password_hash(generated_password).decode('utf-8')
+		user.password = pw_hash
+		user.save()
+		
+		#Send Reset Mail
+		import sendmail
+		message = sendmail.SendPasswordResetMail(user, generated_password)
+		print(message)
+		if message is not None:
+			return "Password Reset Link has been sent to your Email. "
+		else:
+			errors.append("Could Not Send Mail. Try Again Later.")
+
+		if len(errors)>0:
+			return render_template('error.html', errors=errors)
 
 
 ################################

@@ -37,6 +37,7 @@
 		* It handles Session Management, Restricting views to logged in users and a few other minor things. 
 		* It does not provide a User model. 
 		* It does not provide User Registration, User Recovery. 
+		* [This](https://medium.com/@perwagnernielsen/getting-started-with-flask-login-can-be-a-bit-daunting-in-this-tutorial-i-will-use-d68791e9b5b5) is a good place to start with flask-login, as the documentation does not give clear examples. 
 	* Flask-User is actually built on top of Flask-Login. 
 		* Besides doing what Flask-Login does, it also does the following. 
 			* Added Security and Reliability
