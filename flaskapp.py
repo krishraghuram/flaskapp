@@ -4,6 +4,7 @@ from flask import redirect, jsonify
 from flask_mongoengine import MongoEngine
 from flask_mongoengine.wtf import model_form
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
+from flask.ext.bcrypt import Bcrypt
 
 app = Flask(__name__)
 db = MongoEngine(app)
@@ -13,6 +14,7 @@ app.config['MONGODB_SETTINGS'] = {
 }
 login_manager = LoginManager()
 login_manager.init_app(app)
+bcrypt = Bcrypt(app)
 
 #User Model
 class User(db.Document):
@@ -66,7 +68,8 @@ def signup():
 			errors.append('Passwords do not match')
 
 		#Create New User and Save to Database
-		newuser = User(username=username, email=email, password=password)
+		pw_hash = bcrypt.generate_password_hash(password).decode(‘utf-8’)
+		newuser = User(username=username, email=email, password=pw_hash)
 		newuser.save()
 
 		#Return Success Message
@@ -94,7 +97,7 @@ def login():
 			errors.append('Password is required')
 		#Query for user from database and check password
 		user = User.objects.get_or_404(username=username)
-		if user.password == password:
+		if bcrypt.check_password_hash(user.password, password) :
 			login_user(user)
 			return "Login Successful"
 		else:
@@ -136,11 +139,12 @@ def change_password():
 		if new_password!=confirm_new_password:
 			errors.append('New Passwords do not match')
 		user = User.objects.get_or_404(username=username)
-		if user.password != current_password:
+		if not bcrypt.check_password_hash(user.password, password) :
 			errors.append("Password is incorrect")
 		#Query for user from database and check password
 		if len(errors)==0:
-			user.password = new_password
+			pw_hash = bcrypt.generate_password_hash(new_password).decode(‘utf-8’)
+			user.password = pw_hash
 			user.save()
 			return "Password Changed"
 		#Error Message
