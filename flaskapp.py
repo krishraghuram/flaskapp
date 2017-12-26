@@ -175,5 +175,6 @@ def del_all_users():
 	return "Deleted All Users"
 
 @app.route('/me/')
+@login_required
 def me():
 	return "You are logged in as : %s" % current_user.username

@@ -2,8 +2,11 @@ Endpoints
 127.0.0.1:5000/
 127.0.0.1:5000/signup/
 127.0.0.1:5000/login/
+127.0.0.1:5000/logout/
+127.0.0.1:5000/change_password/
 
 127.0.0.1:5000/users/
 127.0.0.1:5000/del_user/<username>
 127.0.0.1:5000/del_all_users/
+127.0.0.1:5000/me/
 

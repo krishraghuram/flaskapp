@@ -12,15 +12,24 @@
 4) Forgot Password - Sending a reset link to the registered email
 5) OAuth - Registering as a client to the Google OAuth Provider.
 
-### Choices 
+
+## What has been done?
+
+### TL;DR
+1) User Model using MongoEngine with username, email and password fields
+2) Session based Authentication using Flask-Login
+3) Endpoints for signup, login, logout and change password. 
+4) To be done : 
+	* Forgot Password reset link using gmail api/postfix etc.
+	* OAuth using google's oauth providers 
+
+### Detailed
 1) The ORM/ODM/Database Framework
 	* PyMongo, Mongokit, MongoEngine and MongoAlchemy
 	* All have flask extensions
 	* MongoAlchemy is no longer maintained
 	* PyMongo is a no-frills, bare bones python api for mongodb. It allows executing mongodb statements/queries from python. It does not contain any higher level abstractions, in terms of Fields, Models or Validation. 
 	* Between MongoKit and MongoEngine, MongoEngine seemed more popular and stable. Thus, I used MongoEngine. 
-
-
 
 2) The Authentication Framework
 	* There are several flask extensions that abstract authentication - Flask-User, Flask-Login, Flask-Security. 
@@ -40,9 +49,8 @@
 		* [Flask-Bcrypt](https://github.com/maxcountryman/flask-bcrypt/)
 		* [From Explore Flask](http://exploreflask.com/en/latest/users.html#storing-passwords), we have the same. 
 		* [This](https://pythonprogramming.net/password-hashing-flask-tutorial/) suggests a different method, using SHA256 for generating salted passwords.
-		* I do not know about the comparative security of the above methods or more. But right now, bcrypt seems like a fine solution.
+		* I do not know about the comparative security of the above methods or more. **But right now, bcrypt seems like a fine solution.**
 		* On a unrelated note, this is a good post on [securing flask](https://damyanon.net/post/flask-series-security/)
-
 
 3) OAuth
 	* [Prior knowledge](https://www.youtube.com/playlist?list=PL1wWPceZhcVlD0Mt0YI7a-ky3boOGNTUM)
