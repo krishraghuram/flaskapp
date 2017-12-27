@@ -27,7 +27,7 @@ from apiclient import errors
 # If modifying these scopes, delete your previously saved credentials
 # at ~/.credentials/gmail-python-quickstart.json
 SCOPES = 'https://mail.google.com/'
-CLIENT_SECRET_FILE = 'client_secret.json'
+CLIENT_SECRET_FILE = 'secrets/mail_client_secret.json'
 APPLICATION_NAME = 'flaskapp'
 
 

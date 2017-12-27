@@ -5,10 +5,14 @@ from flask_mongoengine import MongoEngine
 from flask_mongoengine.wtf import model_form
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 from flask_bcrypt import Bcrypt
+from raven.contrib.flask import Sentry
+from flask_dance.contrib.google import make_google_blueprint, google
+import os
+import secrets.flask_secrets
 
 app = Flask(__name__)
 db = MongoEngine(app)
-app.secret_key = 'j+cTGqe32uAkc9oHxlu0fgx2SRAy9kVsJ1/MkBho3Po='
+app.secret_key = secrets.flask_secrets.secret_key
 app.config['MONGODB_SETTINGS'] = {
 	'db': 'flaskapp'
 }
@@ -16,11 +20,18 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 bcrypt = Bcrypt(app)
 
+sentry = Sentry(app)
+app.config["GOOGLE_OAUTH_CLIENT_ID"] = os.environ.get("GOOGLE_OAUTH_CLIENT_ID")
+app.config["GOOGLE_OAUTH_CLIENT_SECRET"] = os.environ.get("GOOGLE_OAUTH_CLIENT_SECRET")
+google_bp = make_google_blueprint(scope=["profile", "email"])
+app.register_blueprint(google_bp, url_prefix="/login")
+
 #User Model
 class User(db.Document):
 	username = db.StringField(max_length=50, required=True, unique=True)
 	email = db.StringField(max_length=100, required=True)
 	password = db.StringField(max_length=100, required=True)
+	has_usable_password = db.BooleanField(default=True)
 
 	def __repr__(self):
 		return '<User %r>' % self.username
@@ -79,6 +90,28 @@ def signup():
 		if len(errors)>0:
 			return render_template('error.html', errors=errors)
 		
+@app.route("/glogin")
+def glogin():
+	#Let flask-dance do its magic
+	if not google.authorized:
+		return redirect(url_for("google.login"))
+	resp = google.get("/plus/v1/people/me")
+	assert resp.ok, resp.text    
+	#Get/Create user
+	username = resp.json()['emails'][0]['value']
+	try:
+		user = User.objects.get(username=username)
+	except:
+		password = "UNUSABLE_PASSWORD"
+		user = User(username=username, email=username, password=password)
+		user.has_usable_password = False
+		user.save()
+	#Login the user
+	login_user(user)
+	return "Logged in as {0}".format(username)
+
+
+
 @app.route('/login/', methods=['GET', 'POST'])
 def login():
 	if request.method=='GET': #Send the login form
@@ -97,11 +130,14 @@ def login():
 			errors.append('Password is required')
 		#Query for user from database and check password
 		user = User.objects.get_or_404(username=username)
-		if bcrypt.check_password_hash(user.password, password) :
-			login_user(user)
-			return "Login Successful"
-		else:
-			errors.append("Password is incorrect")
+		if user.has_usable_password:
+			if bcrypt.check_password_hash(user.password, password) :
+				login_user(user)
+				return "Login Successful"
+			else:
+				errors.append("Password is incorrect")
+		else: #No usable password
+			errors.append("User has no Password")
 
 		#Error Message
 		if len(errors)>0:
@@ -139,16 +175,20 @@ def change_password():
 		if new_password!=confirm_new_password:
 			errors.append('New Passwords do not match')
 		user = User.objects.get_or_404(username=username)
-		if not bcrypt.check_password_hash(user.password, current_password) :
-			errors.append("Password is incorrect")
-		#Query for user from database and check password
-		if len(errors)==0:
-			pw_hash = bcrypt.generate_password_hash(new_password).decode('utf-8')
-			user.password = pw_hash
-			user.save()
-			return "Password Changed"
+		if user.has_usable_password:
+			if not bcrypt.check_password_hash(user.password, current_password) :
+				errors.append("Password is incorrect")
+			#Query for user from database and check password
+			if len(errors)==0:
+				pw_hash = bcrypt.generate_password_hash(new_password).decode('utf-8')
+				user.password = pw_hash
+				user.save()
+				return "Password Changed"
+		else: #No usable password
+			errors.append("User has no Password")
+
 		#Error Message
-		elif len(errors)>0:
+		if len(errors)>0:
 			return render_template('error.html', errors=errors)
 
 @app.route("/forgot_password/", methods=['GET', 'POST'])
@@ -187,6 +227,10 @@ def forgot_password():
 
 		if len(errors)>0:
 			return render_template('error.html', errors=errors)
+
+
+if __name__ == "__main__":
+	app.run()
 
 
 ################################

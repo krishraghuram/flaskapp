@@ -1,5 +1,5 @@
 #Google Client Secret
-client_secret.json
+secrets/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
